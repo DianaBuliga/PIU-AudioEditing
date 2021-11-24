@@ -1,33 +1,29 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QVBoxLayout, QLabel
+from PyQt5.QtWidgets import QApplication, QWidget
+from PyQt5 import uic
 
 
-class MyApp(QWidget):
+class AppDemo(QWidget):
     def __init__(self):
         super().__init__()
-        #self.window_width, self.window_height, = 1200, 800
-        #self.setMinimumSize(self, self.window_width, self.window_height)
+        uic.loadUi('app.ui', self)
 
-        label = QLabel('Hello World')
+        self.button.clicked.connect(self.print_value)
+        self.button_2.clicked.connect(self.print_value2)
 
-        layout = QVBoxLayout()
-        self.setLayout(layout)
+    def print_value(self):
+        print(self.lineEdit_Entry.text())
 
-        layout.addWidget(label)
+    def print_value2(self):
+        print("You got fooled!")
 
 
 if __name__ == '__main__':
-    app = QApplication([])
-    app.setStyleSheet('''
-        QWidget{
-            font-size: 35px;
-            }
-    ''')
-
-    myApp = MyApp()
-    myApp.show()
+    app = QApplication(sys.argv)
+    demo = AppDemo()
+    demo.show()
 
     try:
-        app.exec_();
+        sys.exit(app.exec_())
     except SystemExit:
         print("Closing Method...")
