@@ -11,6 +11,7 @@ import sys
 
 class VideoWindow(QMainWindow):
     changeRate = pyqtSignal(float)
+    fullScreenChanged = pyqtSignal(bool)
 
     def __init__(self, parent=None):
         super(VideoWindow, self).__init__(parent)
@@ -95,6 +96,7 @@ class VideoWindow(QMainWindow):
         #full screen button create
         self.fullScreenButton = QPushButton("FullScreen")
         self.fullScreenButton.setEnabled(False)
+        self.fullScreenButton.setCheckable(True)
 
         # speed play create
         self.comboSpeed = QComboBox(activated=self.updateSpeed)
