@@ -15,7 +15,7 @@ class VideoWindow(QMainWindow):
         super(VideoWindow, self).__init__(parent)
         self.setWindowTitle("PyQT Project")
 
-        self.setStyleSheet("background-image: url(Artboard_85.png);")
+
 
         self.mediaPlayer = QMediaPlayer(None, QMediaPlayer.VideoSurface)
         self.setAcceptDrops(True)
@@ -148,7 +148,7 @@ class VideoWindow(QMainWindow):
         if fileName != '':
             self.filenames.append(fileName)
             # Create new action
-            LoadedMediaAction = QAction(QIcon('resources/media.png'), fileName.rsplit('/', 1)[0], self)
+            LoadedMediaAction = QAction(QIcon('resources/media.png'), fileName.split('/')[-1], self)
             LoadedMediaAction.setStatusTip(fileName)
             LoadedMediaAction.triggered.connect(lambda: self.loadMedia(index))
             self.loadedMediaMenu.addAction(LoadedMediaAction)
