@@ -7,7 +7,6 @@ from PyQt5.QtWidgets import (QApplication, QFileDialog, QHBoxLayout, QLabel,
 from PyQt5.QtWidgets import QMainWindow, QWidget, QPushButton, QAction
 from PyQt5.QtGui import QIcon
 from moviepy.video.io.VideoFileClip import VideoFileClip
-from moviepy.video.io.ffmpeg_tools import ffmpeg_extract_subclip
 
 import sys
 
@@ -36,6 +35,7 @@ class VideoWindow(QMainWindow):
         # self.
 
         self.index = 0
+        self.savedIndex = 0
         self.filenames = []
 
         self.LoadedMediaActions = []
@@ -118,6 +118,7 @@ class VideoWindow(QMainWindow):
         self.saveButton = QPushButton()
         self.saveButton.setEnabled(False)
         self.saveButton.setText("Save")
+        self.saveButton.clicked.connect(self.saveFile)
 
         # Create layouts to place inside widget
         controlLayout = QHBoxLayout()
@@ -163,6 +164,7 @@ class VideoWindow(QMainWindow):
     def openFile(self):
         fileName, _ = QFileDialog.getOpenFileName(self, "Open Movie", QDir.homePath())
         index = self.index
+        self.savedIndex=index;
         if fileName != '':
             self.filenames.append(fileName)
             # Create new action
@@ -227,7 +229,7 @@ class VideoWindow(QMainWindow):
             self.cut_video(5, 10)
 
     def cut_video(self, start_time=0, end_time=None):
-        clip = VideoFileClip(self.filenames[0])
+        clip = VideoFileClip(self.filenames[self.savedIndex])
         if not end_time:
             end_time = clip.duration
         clip = clip.subclip(start_time, end_time)
@@ -242,7 +244,7 @@ class VideoWindow(QMainWindow):
                                                   "MP3(*.mp3);;MP4(*.mp4 );;All Files(*.*) ")
         if filePath == "":
             return
-        self.self.filenames[0].save(filePath)
+        self.filenames[self.savedIndex].save(filePath)
 
 
 if __name__ == '__main__':
