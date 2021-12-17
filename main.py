@@ -15,8 +15,6 @@ class VideoWindow(QMainWindow):
         super(VideoWindow, self).__init__(parent)
         self.setWindowTitle("PyQT Project")
 
-
-
         self.mediaPlayer = QMediaPlayer(None, QMediaPlayer.VideoSurface)
         self.setAcceptDrops(True)
         videoWidget = QVideoWidget()
