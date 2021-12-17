@@ -2,10 +2,11 @@ from PyQt5.QtCore import QDir, Qt, QUrl
 from PyQt5.QtMultimedia import QMediaContent, QMediaPlayer
 from PyQt5.QtMultimediaWidgets import QVideoWidget
 from PyQt5.QtWidgets import (QApplication, QFileDialog, QHBoxLayout, QLabel,
-        QPushButton, QSizePolicy, QSlider, QStyle, QVBoxLayout, QWidget)
-from PyQt5.QtWidgets import QMainWindow,QWidget, QPushButton, QAction
+                             QPushButton, QSizePolicy, QSlider, QStyle, QVBoxLayout, QWidget)
+from PyQt5.QtWidgets import QMainWindow, QWidget, QPushButton, QAction
 from PyQt5.QtGui import QIcon
 import sys
+
 
 class VideoWindow(QMainWindow):
 
@@ -26,32 +27,43 @@ class VideoWindow(QMainWindow):
         self.positionSlider.setRange(0, 0)
         self.positionSlider.sliderMoved.connect(self.setPosition)
 
-        #self.
+        # self.
 
+        self.index = 0
+        self.filenames = []
+
+        self.LoadedMediaActions = []
         self.errorLabel = QLabel()
-        self.errorLabel.setSizePolicy(QSizePolicy.Preferred,QSizePolicy.Maximum)
+        self.errorLabel.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
 
         # Create new action
-        openAction = QAction(QIcon('open.png'), '&Open', self)
+        openMultipleAction = QAction(QIcon('resources/multiple.png'), '&Open multiple files', self)
+        openMultipleAction.setShortcut('Ctrl+M')
+        openMultipleAction.setStatusTip('Open media files')
+        openMultipleAction.triggered.connect(self.openFile)
+
+        # Create new action
+        openAction = QAction(QIcon('resources/open.png'), '&Open single file', self)
         openAction.setShortcut('Ctrl+O')
-        openAction.setStatusTip('Open movie')
+        openAction.setStatusTip('Open media file')
         openAction.triggered.connect(self.openFile)
 
         # Create exit action
-        exitAction = QAction(QIcon('exit.png'), '&Exit', self)
-        exitAction.setShortcut('Ctrl+Q')
-        exitAction.setStatusTip('Exit application')
-        exitAction.triggered.connect(self.exitCall)
+        self.exitAction = QAction(QIcon('resources/exit.png'), '&Exit', self)
+        self.exitAction.setShortcut('Ctrl+Q')
+        self.exitAction.setStatusTip('Exit application')
+        self.exitAction.triggered.connect(self.exitCall)
 
         # Create menu bar and add action
         menuBar = self.menuBar()
         fileMenu = menuBar.addMenu('&File')
         exitMenu = menuBar.addMenu('&Exit')
-        #fileMenu.addAction(newAction)
+        self.loadedMediaMenu = menuBar.addMenu('&Loaded')
+        # fileMenu.addAction(newAction)
         fileMenu.addAction(openAction)
-        fileMenu.addAction(exitAction)
+        fileMenu.addAction(self.exitAction)
 
-        exitMenu.addAction(exitAction)
+        exitMenu.addAction(self.exitAction)
 
         # Create a widget for window contents
         wid = QWidget(self)
@@ -62,7 +74,7 @@ class VideoWindow(QMainWindow):
         controlLayout.setContentsMargins(0, 0, 0, 0)
         controlLayout.addWidget(self.playButton)
         controlLayout.addWidget(self.positionSlider)
-#        controlLayout.addWidget(self.)
+        #        controlLayout.addWidget(self.)
 
         layout = QVBoxLayout()
         layout.addWidget(videoWidget)
@@ -78,13 +90,30 @@ class VideoWindow(QMainWindow):
         self.mediaPlayer.durationChanged.connect(self.durationChanged)
         self.mediaPlayer.error.connect(self.handleError)
 
+    def loadMedia(self, _index):
+        if self.filenames:
+            self.mediaPlayer.setMedia(
+                QMediaContent(QUrl.fromLocalFile(self.filenames[_index])))
+            self.playButton.setEnabled(True)
+
     def openFile(self):
-        fileName, _ = QFileDialog.getOpenFileName(self, "Open Movie",
-                QDir.homePath())
+        fileName, _ = QFileDialog.getOpenFileName(self, "Open Movie", QDir.homePath())
+        index = self.index
+        if fileName != '':
+            self.filenames.append(fileName)
+            # Create new action
+            LoadedMediaAction = QAction(QIcon('resources/media.png'), fileName.rsplit('/', 1)[0], self)
+            LoadedMediaAction.setStatusTip(fileName)
+            LoadedMediaAction.triggered.connect(lambda: self.loadMedia(index))
+            self.loadedMediaMenu.addAction(LoadedMediaAction)
+            self.index = self.index+1
+
+    def openFiles(self):
+        fileName, _ = QFileDialog.getOpenFileName(self, "Open Movie", QDir.homePath())
 
         if fileName != '':
             self.mediaPlayer.setMedia(
-                    QMediaContent(QUrl.fromLocalFile(fileName)))
+                QMediaContent(QUrl.fromLocalFile(fileName)))
             self.playButton.setEnabled(True)
 
     def exitCall(self):
@@ -99,10 +128,10 @@ class VideoWindow(QMainWindow):
     def mediaStateChanged(self, state):
         if self.mediaPlayer.state() == QMediaPlayer.PlayingState:
             self.playButton.setIcon(
-                    self.style().standardIcon(QStyle.SP_MediaPause))
+                self.style().standardIcon(QStyle.SP_MediaPause))
         else:
             self.playButton.setIcon(
-                    self.style().standardIcon(QStyle.SP_MediaPlay))
+                self.style().standardIcon(QStyle.SP_MediaPlay))
 
     def positionChanged(self, position):
         self.positionSlider.setValue(position)
@@ -116,6 +145,7 @@ class VideoWindow(QMainWindow):
     def handleError(self):
         self.playButton.setEnabled(False)
         self.errorLabel.setText("Error: " + self.mediaPlayer.errorString())
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
