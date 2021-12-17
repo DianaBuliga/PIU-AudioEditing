@@ -6,6 +6,9 @@ from PyQt5.QtWidgets import (QApplication, QFileDialog, QHBoxLayout, QLabel,
 
 from PyQt5.QtWidgets import QMainWindow, QWidget, QPushButton, QAction
 from PyQt5.QtGui import QIcon
+from moviepy.video.io.VideoFileClip import VideoFileClip
+from moviepy.video.io.ffmpeg_tools import ffmpeg_extract_subclip
+
 import sys
 
 
@@ -145,6 +148,7 @@ class VideoWindow(QMainWindow):
         self.mediaPlayer.durationChanged.connect(self.durationChanged)
         self.mediaPlayer.error.connect(self.handleError)
         self.fullScreenButton.clicked.connect(videoWidget.setFullScreen)
+        self.cutButton.clicked.connect(self.cut)
 
     def loadMedia(self, _index):
         if self.filenames:
@@ -168,8 +172,6 @@ class VideoWindow(QMainWindow):
             self.loadedMediaMenu.addAction(LoadedMediaAction)
             self.index = self.index + 1
 
-    def saveFile(self):
-        fileName, _ = QFileDialog.getSaveFileName(self, "Save file", QDir.homePath())
 
     def openFiles(self):
         fileName, _ = QFileDialog.getOpenFileName(self, "Open Movie", QDir.homePath())
@@ -219,6 +221,28 @@ class VideoWindow(QMainWindow):
 
     def updateSpeed(self):
         self.changeRate.emit(self.speed())
+
+    def cut(self):
+         if self.filenames:
+            self.cut_video(5, 10)
+
+    def cut_video(self, start_time=0, end_time=None):
+        clip = VideoFileClip(self.filenames[0])
+        if not end_time:
+            end_time = clip.duration
+        clip = clip.subclip(start_time, end_time)
+        dot_index = self.rfind('.')
+        cut_video_name = self[: dot_index] + '_{}_{}'.format(start_time, end_time) + self[dot_index:]
+        clip.write_videofile(cut_video_name)
+
+        return cut_video_name
+
+    def saveFile(self):
+        filePath, _ = QFileDialog.getSaveFileName(self, "Save Image", "",
+                                                  "MP3(*.mp3);;MP4(*.mp4 );;All Files(*.*) ")
+        if filePath == "":
+            return
+        self.self.filenames[0].save(filePath)
 
 
 if __name__ == '__main__':
