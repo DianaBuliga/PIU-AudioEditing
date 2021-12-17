@@ -151,6 +151,7 @@ class VideoWindow(QMainWindow):
             self.playButton.setEnabled(True)
             self.comboSpeed.setEnabled(True)
             self.cutButton.setEnabled(True)
+            self.saveButton.setEnabled(True)
             self.fullScreenButton.setEnabled(True)
 
     def openFile(self):
@@ -166,7 +167,7 @@ class VideoWindow(QMainWindow):
             self.index = self.index + 1
 
     def saveFile(self):
-        pass
+        fileName, _ = QFileDialog.getSaveFileName(self, "Save file", QDir.homePath())
 
     def openFiles(self):
         fileName, _ = QFileDialog.getOpenFileName(self, "Open Movie", QDir.homePath())
