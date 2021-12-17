@@ -211,6 +211,7 @@ class VideoWindow(QMainWindow):
         self.changeRate.emit(self.speed())
 
 
+
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     player = VideoWindow()
