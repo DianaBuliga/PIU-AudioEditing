@@ -15,7 +15,7 @@ class VideoWindow(QMainWindow):
         super(VideoWindow, self).__init__(parent)
         self.setWindowTitle("PyQT Project")
 
-        self.setStyleSheet("background-image: url(Artboard_85.png);")
+        self.setStyleSheet("background-image: url(Artboard_85.png); background-repeat: no-repeat;")
 
         self.mediaPlayer = QMediaPlayer(None, QMediaPlayer.VideoSurface)
         self.setAcceptDrops(True)
