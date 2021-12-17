@@ -1,4 +1,4 @@
-from PyQt5.QtCore import QDir, Qt, QUrl
+from PyQt5.QtCore import QDir, Qt, QUrl, qFuzzyCompare, pyqtSignal
 from PyQt5.QtMultimedia import QMediaContent, QMediaPlayer
 from PyQt5.QtMultimediaWidgets import QVideoWidget
 from PyQt5.QtWidgets import (QApplication, QFileDialog, QHBoxLayout, QLabel,
@@ -10,6 +10,7 @@ import sys
 
 
 class VideoWindow(QMainWindow):
+    changeRate = pyqtSignal(float)
 
     def __init__(self, parent=None):
         super(VideoWindow, self).__init__(parent)
@@ -92,10 +93,12 @@ class VideoWindow(QMainWindow):
         self.playButton.clicked.connect(self.play)
 
         # speed play create
-        self.comboSpeed = QComboBox()
-        self.comboSpeed.addItems(["x0.5", "x1", "x2"])
+        self.comboSpeed = QComboBox(activated=self.updateRate)
         self.comboSpeed.setEnabled(False)
-        self.comboSpeed.setGeometry(10, 10, 10, 10)
+        self.comboSpeed.addItem("0.5x", 0.5)
+        self.comboSpeed.addItem("1.0x", 1.0)
+        self.comboSpeed.addItem("2.0x", 2.0)
+        self.comboSpeed.setCurrentIndex(1)
 
         # cut/done button create
         self.cutButton = QPushButton()
@@ -128,6 +131,7 @@ class VideoWindow(QMainWindow):
         # Set widget to contain window contents
         wid.setLayout(layout)
 
+        self.changeRate.connect(self.setRate)
         self.mediaPlayer.setVideoOutput(videoWidget)
         self.mediaPlayer.stateChanged.connect(self.mediaStateChanged)
         self.mediaPlayer.positionChanged.connect(self.positionChanged)
@@ -139,6 +143,8 @@ class VideoWindow(QMainWindow):
             self.mediaPlayer.setMedia(
                 QMediaContent(QUrl.fromLocalFile(self.filenames[_index])))
             self.playButton.setEnabled(True)
+            self.comboSpeed.setEnabled(True)
+            self.cutButton.setEnabled(True)
 
     def openFile(self):
         fileName, _ = QFileDialog.getOpenFileName(self, "Open Movie", QDir.homePath())
@@ -197,6 +203,21 @@ class VideoWindow(QMainWindow):
     def handleError(self):
         self.playButton.setEnabled(False)
         self.errorLabel.setText("Error: " + self.mediaPlayer.errorString())
+
+    def playbackRate(self):
+        return self.comboSpeed.itemData(self.comboSpeed.currentIndex())
+
+    def setRate(self, rate):
+        for i in range(self.comboSpeed.count()):
+            if qFuzzyCompare(rate, self.comboSpeed.itemData(i)):
+                self.comboSpeed.setCurrentIndex(i)
+                return
+
+        self.comboSpeed.addItem("%dx" % rate, rate)
+        self.comboSpeed.setCurrentIndex(self.comboSpeed.count() - 1)
+
+    def updateRate(self):
+        self.changeRate.emit(self.playbackRate())
 
 
 if __name__ == '__main__':
