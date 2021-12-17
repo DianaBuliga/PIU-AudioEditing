@@ -92,6 +92,10 @@ class VideoWindow(QMainWindow):
         self.playButton.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
         self.playButton.clicked.connect(self.play)
 
+        #full screen button create
+        self.fullScreenButton = QPushButton("FullScreen")
+        self.fullScreenButton.setEnabled(False)
+
         # speed play create
         self.comboSpeed = QComboBox(activated=self.updateSpeed)
         self.comboSpeed.setEnabled(False)
@@ -117,6 +121,7 @@ class VideoWindow(QMainWindow):
 
         # controlLayout.addWidget(self.positionSlider)
         # controlLayout.addWidget(self.)
+        controlLayout.addWidget(self.fullScreenButton)
         controlLayout.addWidget(self.comboSpeed)
         controlLayout.addWidget(self.cutButton)
         controlLayout.addWidget(self.saveButton)
@@ -137,6 +142,7 @@ class VideoWindow(QMainWindow):
         self.mediaPlayer.positionChanged.connect(self.positionChanged)
         self.mediaPlayer.durationChanged.connect(self.durationChanged)
         self.mediaPlayer.error.connect(self.handleError)
+        self.fullScreenButton.clicked.connect(videoWidget.setFullScreen)
 
     def loadMedia(self, _index):
         if self.filenames:
@@ -145,6 +151,7 @@ class VideoWindow(QMainWindow):
             self.playButton.setEnabled(True)
             self.comboSpeed.setEnabled(True)
             self.cutButton.setEnabled(True)
+            self.fullScreenButton.setEnabled(True)
 
     def openFile(self):
         fileName, _ = QFileDialog.getOpenFileName(self, "Open Movie", QDir.homePath())
@@ -209,7 +216,6 @@ class VideoWindow(QMainWindow):
 
     def updateSpeed(self):
         self.changeRate.emit(self.speed())
-
 
 
 if __name__ == '__main__':
