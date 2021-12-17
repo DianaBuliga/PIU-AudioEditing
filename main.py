@@ -93,7 +93,7 @@ class VideoWindow(QMainWindow):
         self.playButton.clicked.connect(self.play)
 
         # speed play create
-        self.comboSpeed = QComboBox(activated=self.updateRate)
+        self.comboSpeed = QComboBox(activated=self.updateSpeed)
         self.comboSpeed.setEnabled(False)
         self.comboSpeed.addItem("0.5x", 0.5)
         self.comboSpeed.addItem("1.0x", 1.0)
@@ -131,7 +131,7 @@ class VideoWindow(QMainWindow):
         # Set widget to contain window contents
         wid.setLayout(layout)
 
-        self.changeRate.connect(self.setRate)
+        self.changeRate.connect(self.mediaPlayer.setPlaybackRate)
         self.mediaPlayer.setVideoOutput(videoWidget)
         self.mediaPlayer.stateChanged.connect(self.mediaStateChanged)
         self.mediaPlayer.positionChanged.connect(self.positionChanged)
@@ -204,20 +204,11 @@ class VideoWindow(QMainWindow):
         self.playButton.setEnabled(False)
         self.errorLabel.setText("Error: " + self.mediaPlayer.errorString())
 
-    def playbackRate(self):
+    def speed(self):
         return self.comboSpeed.itemData(self.comboSpeed.currentIndex())
 
-    def setRate(self, rate):
-        for i in range(self.comboSpeed.count()):
-            if qFuzzyCompare(rate, self.comboSpeed.itemData(i)):
-                self.comboSpeed.setCurrentIndex(i)
-                return
-
-        self.comboSpeed.addItem("%dx" % rate, rate)
-        self.comboSpeed.setCurrentIndex(self.comboSpeed.count() - 1)
-
-    def updateRate(self):
-        self.changeRate.emit(self.playbackRate())
+    def updateSpeed(self):
+        self.changeRate.emit(self.speed())
 
 
 if __name__ == '__main__':
