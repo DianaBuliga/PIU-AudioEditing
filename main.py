@@ -2,7 +2,8 @@ from PyQt5.QtCore import QDir, Qt, QUrl
 from PyQt5.QtMultimedia import QMediaContent, QMediaPlayer
 from PyQt5.QtMultimediaWidgets import QVideoWidget
 from PyQt5.QtWidgets import (QApplication, QFileDialog, QHBoxLayout, QLabel,
-                             QPushButton, QSizePolicy, QSlider, QStyle, QVBoxLayout, QWidget)
+                             QPushButton, QSizePolicy, QSlider, QStyle, QVBoxLayout, QWidget, QComboBox)
+
 from PyQt5.QtWidgets import QMainWindow, QWidget, QPushButton, QAction
 from PyQt5.QtGui import QIcon
 import sys
@@ -13,6 +14,8 @@ class VideoWindow(QMainWindow):
     def __init__(self, parent=None):
         super(VideoWindow, self).__init__(parent)
         self.setWindowTitle("PyQT Project")
+
+        self.setStyleSheet("background-image: url(Artboard_85.png);")
 
         self.mediaPlayer = QMediaPlayer(None, QMediaPlayer.VideoSurface)
         self.setAcceptDrops(True)
@@ -48,36 +51,79 @@ class VideoWindow(QMainWindow):
         openAction.setStatusTip('Open media file')
         openAction.triggered.connect(self.openFile)
 
+        # Create save action
+        saveAction = QAction(QIcon('resources/save.png'), '&Save', self)
+        saveAction.setShortcut('Ctrl+S')
+        saveAction.setStatusTip('Save File')
+        saveAction.triggered.connect(self.saveFile)
+
         # Create exit action
-        self.exitAction = QAction(QIcon('resources/exit.png'), '&Exit', self)
-        self.exitAction.setShortcut('Ctrl+Q')
-        self.exitAction.setStatusTip('Exit application')
-        self.exitAction.triggered.connect(self.exitCall)
+        exitAction = QAction(QIcon('resources/exit.png'), '&Exit', self)
+        exitAction.setShortcut('Ctrl+Q')
+        exitAction.setStatusTip('Exit application')
+        exitAction.triggered.connect(self.exitCall)
 
         # Create menu bar and add action
         menuBar = self.menuBar()
         fileMenu = menuBar.addMenu('&File')
-        exitMenu = menuBar.addMenu('&Exit')
+
         self.loadedMediaMenu = menuBar.addMenu('&Loaded')
         # fileMenu.addAction(newAction)
         fileMenu.addAction(openAction)
-        fileMenu.addAction(self.exitAction)
-
-        exitMenu.addAction(self.exitAction)
+        fileMenu.addAction(saveAction)
+        fileMenu.addAction(exitAction)
 
         # Create a widget for window contents
         wid = QWidget(self)
         self.setCentralWidget(wid)
 
+        # Create position slider layout
+        sliderLayout = QHBoxLayout()
+        sliderLayout.setContentsMargins(0, 0, 0, 0)
+
+        # position slider create
+        self.positionSlider = QSlider(Qt.Horizontal)
+        self.positionSlider.setRange(0, 0)
+        self.positionSlider.sliderMoved.connect(self.setPosition)
+        sliderLayout.addWidget(self.positionSlider)
+
+        # play button create
+        self.playButton = QPushButton()
+        self.playButton.setEnabled(False)
+        self.playButton.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
+        self.playButton.clicked.connect(self.play)
+
+        # speed play create
+        self.comboSpeed = QComboBox()
+        self.comboSpeed.addItems(["x0.5", "x1", "x2"])
+        self.comboSpeed.setEnabled(False)
+        self.comboSpeed.setGeometry(10, 10, 10, 10)
+
+        # cut/done button create
+        self.cutButton = QPushButton()
+        self.cutButton.setEnabled(False)
+        self.cutButton.setText("Cut")
+
+        # save button create
+        self.saveButton = QPushButton()
+        self.saveButton.setEnabled(False)
+        self.saveButton.setText("Save")
+
         # Create layouts to place inside widget
         controlLayout = QHBoxLayout()
         controlLayout.setContentsMargins(0, 0, 0, 0)
         controlLayout.addWidget(self.playButton)
-        controlLayout.addWidget(self.positionSlider)
-        #        controlLayout.addWidget(self.)
+
+        # controlLayout.addWidget(self.positionSlider)
+        # controlLayout.addWidget(self.)
+        controlLayout.addWidget(self.comboSpeed)
+        controlLayout.addWidget(self.cutButton)
+        controlLayout.addWidget(self.saveButton)
 
         layout = QVBoxLayout()
         layout.addWidget(videoWidget)
+        layout.addLayout(sliderLayout)
+
         layout.addLayout(controlLayout)
         layout.addWidget(self.errorLabel)
 
@@ -106,7 +152,10 @@ class VideoWindow(QMainWindow):
             LoadedMediaAction.setStatusTip(fileName)
             LoadedMediaAction.triggered.connect(lambda: self.loadMedia(index))
             self.loadedMediaMenu.addAction(LoadedMediaAction)
-            self.index = self.index+1
+            self.index = self.index + 1
+
+    def saveFile(self):
+        pass
 
     def openFiles(self):
         fileName, _ = QFileDialog.getOpenFileName(self, "Open Movie", QDir.homePath())
@@ -128,6 +177,7 @@ class VideoWindow(QMainWindow):
     def mediaStateChanged(self, state):
         if self.mediaPlayer.state() == QMediaPlayer.PlayingState:
             self.playButton.setIcon(
+
                 self.style().standardIcon(QStyle.SP_MediaPause))
         else:
             self.playButton.setIcon(
@@ -141,6 +191,10 @@ class VideoWindow(QMainWindow):
 
     def setPosition(self, position):
         self.mediaPlayer.setPosition(position)
+
+    def handleError(self):
+        self.playButton.setEnabled(False)
+        self.errorLabel.setText("Error: " + self.mediaPlayer.errorString())
 
     def handleError(self):
         self.playButton.setEnabled(False)
