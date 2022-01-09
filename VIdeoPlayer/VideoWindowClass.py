@@ -1,6 +1,6 @@
 from PyQt5.QtCore import QDir, Qt, QUrl, pyqtSignal, QSettings
 from PyQt5.QtGui import QIcon
-from PyQt5.QtMultimedia import QMediaContent, QMediaPlayer
+from PyQt5.QtMultimedia import QMediaContent, QMediaPlayer, QMediaPlaylist
 from PyQt5.QtMultimediaWidgets import QVideoWidget
 from PyQt5.QtWidgets import (QFileDialog, QHBoxLayout, QLabel,
                              QSizePolicy, QSlider, QStyle, QVBoxLayout, QComboBox)
@@ -9,7 +9,6 @@ from PyQt5.QtWidgets import QMainWindow, QWidget, QPushButton, QAction
 
 
 class VideoWindow(QMainWindow):
-
     changeRate = pyqtSignal(float)
     fullScreenChanged = pyqtSignal(bool)
 
@@ -91,6 +90,9 @@ class VideoWindow(QMainWindow):
         self.mediaPlayer = QMediaPlayer(None, QMediaPlayer.VideoSurface)
         videoWidget = QVideoWidget()
 
+        # Create Playlist
+        self.playlist = QMediaPlaylist()
+
         # Create the PlayheadSlider
         self.playheadSlider = QSlider(Qt.Horizontal)
         self.playheadSlider.setRange(0, 0)
@@ -111,9 +113,11 @@ class VideoWindow(QMainWindow):
         self.comboSpeed = QComboBox(activated=self.updateSpeed)
         self.comboSpeed.setEnabled(False)
         self.comboSpeed.addItem("0.5x", 0.5)
+        self.comboSpeed.addItem("0.75x", 0.75)
         self.comboSpeed.addItem("1.0x", 1.0)
-        self.comboSpeed.addItem("2.0x", 2.0)
-        self.comboSpeed.setCurrentIndex(1)
+        self.comboSpeed.addItem("1.25x", 1.25)
+        self.comboSpeed.addItem("1.5x", 1.5)
+        self.comboSpeed.setCurrentIndex(2)
 
         # Create Cut/Done button
         self.cutButton = QPushButton()
@@ -138,7 +142,7 @@ class VideoWindow(QMainWindow):
 
         # Create control layout
         controlLayout = QHBoxLayout()
-        controlLayout.setContentsMargins(0, 0, 0, 0)
+        controlLayout.setContentsMargins(110, 20, 0, 0)
         controlLayout.addWidget(self.playButton)
         controlLayout.addWidget(self.fullScreenButton)
         controlLayout.addWidget(self.comboSpeed)
@@ -205,7 +209,8 @@ class VideoWindow(QMainWindow):
     # Displays the errorLabel when an error occurs to the videoPlayer
     def handleError(self):
         self.playButton.setEnabled(False)
-        self.errorLabel.setText("Error: " + self.mediaPlayer.errorString())
+        self.errorLabel.setText(
+            "Error: You must install codec if you are on Windows! " + self.mediaPlayer.errorString())
 
     # Loads a selected media file into the videoplayer
     def loadMedia(self, _index):
@@ -222,7 +227,7 @@ class VideoWindow(QMainWindow):
     def openFile(self):
         fileName, _ = QFileDialog.getOpenFileName(self, "Open Movie", QDir.homePath())
         index = self.index
-        self.savedIndex = index;
+        self.savedIndex = index
         if fileName != '':
             self.filenames.append(fileName)
             # Create new action
