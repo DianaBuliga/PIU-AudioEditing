@@ -126,6 +126,11 @@ class VideoWindow(QMainWindow):
         self.saveButton.setText("Save")
         self.saveButton.clicked.connect(self.saveFile)
 
+        # Create Exit button
+        self.exitButton = QPushButton()
+        self.exitButton.setText("Exit")
+        self.exitButton.clicked.connect(self.exitCall)
+
         # Create position slider layout
         sliderLayout = QHBoxLayout()
         sliderLayout.setContentsMargins(0, 0, 0, 0)
@@ -139,6 +144,7 @@ class VideoWindow(QMainWindow):
         controlLayout.addWidget(self.comboSpeed)
         controlLayout.addWidget(self.cutButton)
         controlLayout.addWidget(self.saveButton)
+        controlLayout.addWidget(self.exitButton)
 
         # Add to the final layout
         layout = QVBoxLayout()
