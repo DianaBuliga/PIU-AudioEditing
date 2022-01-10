@@ -1,10 +1,14 @@
-from PyQt5.QtCore import QDir, Qt, QUrl, pyqtSignal, QSettings
+from os import path, listdir as ld
+
+from PyQt5.QtCore import QDir, Qt, QUrl, pyqtSignal, QSettings, QDirIterator
 from PyQt5.QtGui import QIcon
 from PyQt5.QtMultimedia import QMediaContent, QMediaPlayer, QMediaPlaylist
 from PyQt5.QtMultimediaWidgets import QVideoWidget
 from PyQt5.QtWidgets import (QFileDialog, QHBoxLayout, QLabel,
-                             QSizePolicy, QSlider, QStyle, QVBoxLayout, QComboBox)
+                             QSizePolicy, QSlider, QStyle, QVBoxLayout, QComboBox, QTableWidget, QTableWidgetItem)
 from PyQt5.QtWidgets import QMainWindow, QWidget, QPushButton, QAction
+
+
 # from moviepy.video.io.VideoFileClip import VideoFileClip
 
 
@@ -35,7 +39,18 @@ class VideoWindow(QMainWindow):
         width = self.setting_window.value('window_width')
         self.resize(int(width), int(height))
 
+        # Status Bar
+
+        self.statusBar()
+        self.statusBarStatus = 0
+        self.handleStatusBar()
+
         # Variables used for the logic of loading the files (To be reviewed)
+
+        self.playlistLoaded = False
+
+        self.drt = None
+        self.fl = None
 
         self.index = 0
         self.savedIndex = 0
@@ -47,16 +62,16 @@ class VideoWindow(QMainWindow):
 
         # MAIN MENU ACTIONS
 
-        # Create new action (To be reviewed)
-        openMultipleAction = QAction(QIcon('../resources/icons/multiple.png'), '&Open multiple files', self)
-        openMultipleAction.setShortcut('Ctrl+M')
-        openMultipleAction.setStatusTip('Open media files')
-        openMultipleAction.triggered.connect(self.openFile)
+        # Create load folder action(To be reviewed)
+        loadFolderAction = QAction(QIcon('../resources/icons/multiple.png'), '&Add Media Folder', self)
+        loadFolderAction.setShortcut('Ctrl+F')
+        loadFolderAction.setStatusTip('Open Media Folder')
+        loadFolderAction.triggered.connect(self.openMediaFolder)
 
         # Create open action
-        openAction = QAction(QIcon('../resources/icons/open.png'), '&Open single file', self)
+        openAction = QAction(QIcon('../resources/icons/open.png'), '&Add Media File', self)
         openAction.setShortcut('Ctrl+O')
-        openAction.setStatusTip('Open media file')
+        openAction.setStatusTip('Open Media File')
         openAction.triggered.connect(self.openFile)
 
         # Create save action
@@ -79,13 +94,15 @@ class VideoWindow(QMainWindow):
         self.loadedMediaMenu = menuBar.addMenu('&Loaded')
 
         # Add fileMenu drop-down actions
-        fileMenu.addAction(openMultipleAction)
+        fileMenu.addAction(loadFolderAction)
         fileMenu.addAction(openAction)
         fileMenu.addAction(saveAction)
         fileMenu.addAction(exitAction)
 
         # CREATING WIDGETS
 
+        self.table = QTableWidget()
+        self.playlist = QMediaPlaylist()
         # Create the MediaPlayerClass
         self.mediaPlayer = QMediaPlayer(None, QMediaPlayer.VideoSurface)
         videoWidget = QVideoWidget()
@@ -104,7 +121,12 @@ class VideoWindow(QMainWindow):
         self.playButton.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
         self.playButton.clicked.connect(self.play)
 
-        # Create Full Screen button
+        # Create the ShowPlaylistButton
+        self.showPlaylistButton = QPushButton("Show Playlist")
+        self.showPlaylistButton.setEnabled(False)
+        self.showPlaylistButton.clicked.connect(self.showPlaylist)
+
+        # Create FullScreenButton
         self.fullScreenButton = QPushButton("FullScreen")
         self.fullScreenButton.setEnabled(False)
         self.fullScreenButton.setCheckable(True)
@@ -138,29 +160,39 @@ class VideoWindow(QMainWindow):
         # Create position slider layout
         sliderLayout = QHBoxLayout()
         sliderLayout.setContentsMargins(0, 0, 0, 0)
+        sliderLayout.addWidget(self.playButton)
         sliderLayout.addWidget(self.playheadSlider)
 
         # Create control layout
         controlLayout = QHBoxLayout()
         controlLayout.setContentsMargins(110, 20, 0, 0)
-        controlLayout.addWidget(self.playButton)
+
         controlLayout.addWidget(self.fullScreenButton)
         controlLayout.addWidget(self.comboSpeed)
         controlLayout.addWidget(self.cutButton)
         controlLayout.addWidget(self.saveButton)
         controlLayout.addWidget(self.exitButton)
+        controlLayout.addWidget(self.showPlaylistButton)
+
+        # Add to the main layout
+        leftLayout = QVBoxLayout()
+        leftLayout.addWidget(videoWidget)
+        leftLayout.addLayout(sliderLayout)
+        leftLayout.addLayout(controlLayout)
+        leftLayout.addWidget(self.errorLabel)
+
+        # Create playlist layout
+        self.playlistLayout = QHBoxLayout()
 
         # Add to the final layout
-        layout = QVBoxLayout()
-        layout.addWidget(videoWidget)
-        layout.addLayout(sliderLayout)
-        layout.addLayout(controlLayout)
-        layout.addWidget(self.errorLabel)
+        finalLayout = QHBoxLayout()
+        finalLayout.addLayout(leftLayout)
+        finalLayout.addLayout(self.playlistLayout)
 
         # Create a widget for window contents and makes it the main window and set it to have the layout
         wid = QWidget(self)
         self.setCentralWidget(wid)
-        wid.setLayout(layout)
+        wid.setLayout(finalLayout)
 
         self.changeRate.connect(self.mediaPlayer.setPlaybackRate)
         self.mediaPlayer.setVideoOutput(videoWidget)
@@ -169,6 +201,14 @@ class VideoWindow(QMainWindow):
         self.mediaPlayer.durationChanged.connect(self.durationChanged)
         self.mediaPlayer.error.connect(self.handleError)
         self.fullScreenButton.clicked.connect(videoWidget.setFullScreen)
+
+    def showPlaylist(self):
+        if self.playlistLoaded and self.table.isHidden() is False:
+            self.table.hide()
+            self.showPlaylistButton.setText("Show Playlist")
+        elif self.table.isHidden():
+            self.table.show()
+            self.showPlaylistButton.setText("Hide Playlist")
 
     # Returns the speed chosen by choosing the comboSpeed
     def speed(self):
@@ -212,6 +252,11 @@ class VideoWindow(QMainWindow):
         self.errorLabel.setText(
             "Error: You must install codec if you are on Windows! " + self.mediaPlayer.errorString())
 
+    # Sets the message shown in the status bar
+    def handleStatusBar(self):
+        if self.statusBarStatus == 0:
+            self.statusBar().showMessage("No Loaded Media!")
+
     # Loads a selected media file into the videoplayer
     def loadMedia(self, _index):
         if self.filenames:
@@ -225,7 +270,7 @@ class VideoWindow(QMainWindow):
 
     # Lets you select one media file and add it to the "filenames" submenu
     def openFile(self):
-        fileName, _ = QFileDialog.getOpenFileName(self, "Open Movie", QDir.homePath())
+        fileName, _ = QFileDialog.getOpenFileName(self, "Add File", QDir.homePath())
         index = self.index
         self.savedIndex = index
         if fileName != '':
@@ -238,20 +283,42 @@ class VideoWindow(QMainWindow):
             self.index = self.index + 1
 
     # Lets you select multiple media files and add it to the "filenames" submenu
-    def openFiles(self):
-        fileNames, _ = QFileDialog.getOpenFileNames(self, "Open Movie", QDir.homePath(), "mp3Files(*.mp3)")
-        index = self.index
-        self.savedIndex = index
-        numOfFiles = len(fileNames)
-        if fileNames != '':
-            for fileName in fileNames:
-                self.filenames.append(fileName)
-                # Create new action
-                LoadedMediaAction = QAction(QIcon('../resources/icons/media.png'), fileName.split('/')[-1], self)
-                LoadedMediaAction.setStatusTip(fileName)
-                LoadedMediaAction.triggered.connect(lambda: self.loadMedia(index))
-                self.loadedMediaMenu.addAction(LoadedMediaAction)
-                self.index = self.index + 1
+    def openMediaFolder(self):
+        folderChosen = QFileDialog.getExistingDirectory(self, 'Open Music Folder', '~')
+
+        self.drt = folderChosen
+        cam = [path.join(self.drt, nome) for nome in ld(self.drt) if path.isfile(path.join(self.drt, nome))]
+        self.fl = [x[len(self.drt) + 1:] for x in cam]
+
+        self.table.setRowCount(len(self.fl))
+        self.table.setColumnCount(3)
+        self.table.setHorizontalHeaderLabels(("NR", "TITLE", 'TIME'))
+        self.table.setVerticalHeaderLabels(("",) * len(self.fl))
+        self.table.setEditTriggers(QTableWidget.NoEditTriggers)
+#        self.table.itemDoubleClicked.connect(self.on_click)
+
+        if folderChosen is not None:
+            self.playlistLoaded = True
+            self.showPlaylistButton.setEnabled(True)
+            iterator = QDirIterator(folderChosen)
+            iterator.next()
+            while iterator.hasNext():
+                if not iterator.fileInfo().isDir() and iterator.filePath() != '.':
+                    fInfo = iterator.fileInfo()
+                    if fInfo.suffix() in ('mp3', 'ogg', 'wav', 'm4a', 'mp4', 'wav'):
+                        for x in range(len(self.fl)):
+                            self.table.setItem(x, 0, QTableWidgetItem(str(x + 1)))
+                            self.table.setItem(x, 1, QTableWidgetItem(self.fl[x]))
+                            # self.table.setItem(x, 2, QTableWidgetItem(self.d[x]))
+                            self.table.setColumnWidth(0, 45)
+                            self.table.setColumnWidth(1, 360)
+                            self.table.setColumnWidth(2, 80)
+                        self.playlist.addMedia(QMediaContent(QUrl.fromLocalFile(iterator.filePath())))
+                    else:
+                        break
+                iterator.next()
+            self.playlistLayout.addWidget(self.table)
+            self.table.hide()
 
     # Deprecated
     def saveFile(self):
