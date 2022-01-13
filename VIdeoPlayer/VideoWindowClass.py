@@ -40,7 +40,6 @@ class VideoWindow(QMainWindow):
         self.resize(int(width), int(height))
 
         # Status Bar
-
         self.statusBar()
         self.statusBarStatus = 0
         self.handleStatusBar()
@@ -48,10 +47,11 @@ class VideoWindow(QMainWindow):
         # Variables used for the logic of loading the files (To be reviewed)
 
         self.playlistLoaded = False
-
+        self.play = False
         self.drt = None
         self.fl = None
-
+        self.currentRowNr = 0
+        self.lastPlaylistIndex = 0
         self.index = 0
         self.savedIndex = 0
         self.filenames = []
@@ -102,10 +102,15 @@ class VideoWindow(QMainWindow):
         # CREATING WIDGETS
 
         self.table = QTableWidget()
+
         self.playlist = QMediaPlaylist()
         # Create the MediaPlayerClass
         self.mediaPlayer = QMediaPlayer(None, QMediaPlayer.VideoSurface)
         videoWidget = QVideoWidget()
+
+        # Set the table
+        self.table.setColumnCount(3)
+        self.table.setHorizontalHeaderLabels(("NR", "TITLE", 'TIME'))
 
         # Create Playlist
         self.playlist = QMediaPlaylist()
@@ -119,7 +124,7 @@ class VideoWindow(QMainWindow):
         self.playButton = QPushButton()
         self.playButton.setEnabled(False)
         self.playButton.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
-        self.playButton.clicked.connect(self.play)
+        self.playButton.clicked.connect(self.playMusic)
 
         # Create the ShowPlaylistButton
         self.showPlaylistButton = QPushButton("Show Playlist")
@@ -195,6 +200,7 @@ class VideoWindow(QMainWindow):
         wid.setLayout(finalLayout)
 
         self.changeRate.connect(self.mediaPlayer.setPlaybackRate)
+        self.mediaPlayer.setPlaylist(self.playlist)
         self.mediaPlayer.setVideoOutput(videoWidget)
         self.mediaPlayer.stateChanged.connect(self.mediaStateChanged)
         self.mediaPlayer.positionChanged.connect(self.positionChanged)
@@ -219,7 +225,7 @@ class VideoWindow(QMainWindow):
         self.changeRate.emit(self.speed())
 
     # Toggles between the play and pause state when pressing the button
-    def play(self):
+    def playMusic(self):
         if self.mediaPlayer.state() == QMediaPlayer.PlayingState:
             self.mediaPlayer.pause()
         else:
@@ -289,13 +295,10 @@ class VideoWindow(QMainWindow):
         self.drt = folderChosen
         cam = [path.join(self.drt, nome) for nome in ld(self.drt) if path.isfile(path.join(self.drt, nome))]
         self.fl = [x[len(self.drt) + 1:] for x in cam]
-
-        self.table.setRowCount(len(self.fl))
-        self.table.setColumnCount(3)
-        self.table.setHorizontalHeaderLabels(("NR", "TITLE", 'TIME'))
-        self.table.setVerticalHeaderLabels(("",) * len(self.fl))
+        self.table.setRowCount(len(self.fl) + self.currentRowNr)
+        self.table.setVerticalHeaderLabels(("",) * (len(self.fl) + self.currentRowNr))
+        self.currentRowNr += len(self.fl)
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
-#        self.table.itemDoubleClicked.connect(self.on_click)
 
         if folderChosen is not None:
             self.playlistLoaded = True
@@ -307,9 +310,11 @@ class VideoWindow(QMainWindow):
                     fInfo = iterator.fileInfo()
                     if fInfo.suffix() in ('mp3', 'ogg', 'wav', 'm4a', 'mp4', 'wav'):
                         for x in range(len(self.fl)):
-                            self.table.setItem(x, 0, QTableWidgetItem(str(x + 1)))
-                            self.table.setItem(x, 1, QTableWidgetItem(self.fl[x]))
-                            # self.table.setItem(x, 2, QTableWidgetItem(self.d[x]))
+                            self.filenames.append(iterator.filePath())
+                            self.table.setItem(x + self.lastPlaylistIndex, 0,
+                                               QTableWidgetItem(str(x + 1 + self.lastPlaylistIndex)))
+                            self.table.setItem(x + self.lastPlaylistIndex, 1, QTableWidgetItem(self.fl[x]))
+                            self.table.setItem(x + self.lastPlaylistIndex, 2, QTableWidgetItem("Placeholder"))
                             self.table.setColumnWidth(0, 45)
                             self.table.setColumnWidth(1, 360)
                             self.table.setColumnWidth(2, 80)
@@ -319,10 +324,40 @@ class VideoWindow(QMainWindow):
                 iterator.next()
             self.playlistLayout.addWidget(self.table)
             self.table.hide()
+            self.lastPlaylistIndex += len(self.fl)
+           # self.table.itemDoubleClicked.connect(self.loadMedia(self.table.item(self.table.currentRow(), 0)))
 
-    # Deprecated
+    def addFiles(self):
+        if self.playlist.mediaCount() > 0:
+            self.openMediaFolder()
+        else:
+            self.openMediaFolder()
+            for x in range(len(self.fl)):
+                self.player.setPlaylist(self.playlist)
+                self.player.playlist().setCurrentIndex(-x)
+                self.player.play()
+          #  self.player.durationChanged.connect(self.duration_Changed)
+            self.player.stop()
+         #   print(self.dur)
+
+    def on_click(self):
+        self.play = True
+        for currentQTableWidgetItem in self.table.selectedItems():
+            self.row = currentQTableWidgetItem.row() + 1
+            self.v = currentQTableWidgetItem.text()
+        self.playSong()
+
+    def playMedia(self):
+        if self.play:
+            row = self.row - 1
+            url = QUrl.fromLocalFile(f"{self.drt}/{self.fl[row]}")
+            content = QMediaContent(url)
+            self.player.setMedia(content)
+            self.player.play()
+
+    # Deprecated To be done after integration of moviepy
     def saveFile(self):
-        filePath, _ = QFileDialog.getSaveFileName(self, "Save Image", "",
+        filePath, _ = QFileDialog.getSaveFileName(self, "Save Media", "",
                                                   "MP3(*.mp3);;MP4(*.mp4 );;All Files(*.*) ")
         if filePath == "":
             return

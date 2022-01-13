@@ -117,7 +117,7 @@ class App(QMainWindow):
         prevBtn.setFont(QFont('Sanserif', 12, QFont.Bold))
         shuffleBtn = QPushButton('Shuffle', clicked=self.shufflelist)
         shuffleBtn.setToolTip("Reproduzir a lista de áudios de forma aleatória.")
-        shuffleBtn.setStyleSheet(f"background-color: {black}; color: {yellow}")
+        shuffleBtn.setStyleSheet(f  "background-color: {black}; color: {yellow}")
         shuffleBtn.resize(10, 10)
         shuffleBtn.setFont(QFont('Sanserif', 12, QFont.Bold))
         nextBtn = QPushButton('Next', clicked=self.nextSong)
