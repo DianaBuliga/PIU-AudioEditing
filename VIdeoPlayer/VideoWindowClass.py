@@ -266,10 +266,9 @@ class VideoWindow(QMainWindow):
             self.statusBar().showMessage("No Loaded Media!")
 
     # Loads a selected media file into the videoplayer
-    def loadMedia(self, _index):
+    def loadMedia(self, musicPath):
         if self.filenames:
-            self.mediaPlayer.setMedia(
-                QMediaContent(QUrl.fromLocalFile(self.filenames[_index])))
+            self.mediaPlayer.setMedia(QMediaContent(musicPath))
             self.playButton.setEnabled(True)
             self.comboSpeed.setEnabled(True)
             self.cutButton.setEnabled(True)
@@ -283,10 +282,11 @@ class VideoWindow(QMainWindow):
         self.savedIndex = index
         if fileName != '':
             self.filenames.append(fileName)
+            musicPath=QUrl.fromLocalFile(fileName)
             # Create new action
             LoadedMediaAction = QAction(QIcon('../resources/icons/media.png'), fileName.split('/')[-1], self)
             LoadedMediaAction.setStatusTip(fileName)
-            LoadedMediaAction.triggered.connect(lambda: self.loadMedia(index))
+            LoadedMediaAction.triggered.connect(lambda: self.loadMedia(musicPath))
             self.loadedMediaMenu.addAction(LoadedMediaAction)
             self.index = self.index + 1
 
@@ -301,6 +301,7 @@ class VideoWindow(QMainWindow):
         self.table.setVerticalHeaderLabels(("",) * (len(self.fl) + self.currentRowNr))
         self.currentRowNr += len(self.fl)
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.table.itemDoubleClicked.connect(self.clickedItem)
 
         if folderChosen is not None:
             self.playlistLoaded = True
@@ -327,7 +328,7 @@ class VideoWindow(QMainWindow):
             self.playlistLayout.addWidget(self.table)
             self.table.hide()
             self.lastPlaylistIndex += len(self.fl)
-           # self.table.itemDoubleClicked.connect(self.loadMedia(self.table.item(self.table.currentRow(), 0)))
+
 
     def addFiles(self):
         if self.playlist.mediaCount() > 0:
@@ -342,20 +343,17 @@ class VideoWindow(QMainWindow):
             self.player.stop()
          #   print(self.dur)
 
-    def on_click(self):
+    def clickedItem(self):
         self.play = True
         for currentQTableWidgetItem in self.table.selectedItems():
             self.row = currentQTableWidgetItem.row() + 1
             self.v = currentQTableWidgetItem.text()
-        self.playSong()
 
-    def playMedia(self):
-        if self.play:
-            row = self.row - 1
-            url = QUrl.fromLocalFile(f"{self.drt}/{self.fl[row]}")
-            content = QMediaContent(url)
-            self.player.setMedia(content)
-            self.player.play()
+        row = self.row - 1
+        url = QUrl.fromLocalFile(f"{self.drt}/{self.fl[row]}")
+        content = QMediaContent(url)
+        self.mediaPlayer.setMedia(content)
+        self.mediaPlayer.play()
 
     # Deprecated To be done after integration of moviepy
     def saveFile(self):
