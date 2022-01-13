@@ -47,6 +47,7 @@ class VideoWindow(QMainWindow):
 
         # Variables used for the logic of loading the files (To be reviewed)
 
+        self.loadedSongsPaths = []
         self.playlistLoaded = False
         self.drt = None
         self.fl = []
@@ -271,10 +272,10 @@ class VideoWindow(QMainWindow):
 
     # Lets you select one media file and add it to the "filenames" submenu
     def openFile(self):
-        fileName, _ = QFileDialog.getOpenFileName(self, "Add File", QDir.homePath())
+        fileName, _ = QFileDialog.getOpenFileName(self, "Add File", QDir.homePath(),"MP3(*.mp3);;MP4(*.mp4 );; OGG(*.ogg);; WAV(*.wav);; M4A(*.m4a);;All Files(*.*) ")
         if fileName != '':
-            print(fileName)
-            self.fl += str(fileName)
+            self.fl.append(fileName.split('/')[-1])
+            self.loadedSongsPaths.append(fileName)
             self.createLoadedMediaAction(fileName)
             self.createTable()
             self.createTableRow()
@@ -295,34 +296,35 @@ class VideoWindow(QMainWindow):
     # Lets you select multiple media files and add it to the "filenames" submenu
     def openMediaFolder(self):
         folderChosen = QFileDialog.getExistingDirectory(self, 'Open Music Folder', '~')
+        if folderChosen != '':
+            self.drt = folderChosen  # Path la director
+            cam = [path.join(self.drt, name) for name in ld(self.drt) if
+                   path.isfile(path.join(self.drt, name))]  # Lista de path-uri de director/melodie
+            self.loadedSongsPaths += cam
+            self.fl += [x[len(self.drt) + 1:] for x in cam]  # Lista de nume de melodii
 
-        self.drt = folderChosen
-        cam = [path.join(self.drt, name) for name in ld(self.drt) if path.isfile(path.join(self.drt, name))]  # Lista de path-uri de melodii
-        self.fl += [x[len(self.drt) + 1:] for x in cam]  # Lista de nume de melodii
-        self.createTable()
+            self.createTable()
 
-        print(self.fl)
-
-        if folderChosen is not None:
-            self.playlistLoaded = True
-            self.showPlaylistButton.setEnabled(True)
-            iterator = QDirIterator(folderChosen)
-            iterator.next()
-            while iterator.hasNext():
-                if not iterator.fileInfo().isDir() and iterator.filePath() != '.':
-                    if iterator.fileInfo().suffix() in ('mp3', 'ogg', 'wav', 'm4a', 'mp4', 'wav'):
-                        self.createLoadedMediaAction(self.fl[self.lastPlaylistIndex])
-                        self.createTableRow()
-                    else:
-                        break
+            if folderChosen is not None:
+                self.playlistLoaded = True
+                self.showPlaylistButton.setEnabled(True)
+                iterator = QDirIterator(folderChosen)
                 iterator.next()
+                while iterator.hasNext():
+                    if not iterator.fileInfo().isDir() and iterator.filePath() != '.':
+                        if iterator.fileInfo().suffix() in ('mp3', 'ogg', 'wav', 'm4a', 'mp4', 'wav'):
+                            self.createLoadedMediaAction(self.fl[self.lastPlaylistIndex])
+                            self.createTableRow()
+                        else:
+                            break
+                    iterator.next()
 
-            #self.createLoadedMediaAction(self.fl[self.lastPlaylistIndex])
-            #self.createTableRow()
+                self.createLoadedMediaAction(self.fl[self.lastPlaylistIndex])
+                self.createTableRow()
 
-            self.playlistLayout.addWidget(self.table)
-            self.table.hide()
-            self.showPlaylistButton.setText("Show Playlist")
+                self.playlistLayout.addWidget(self.table)
+                self.table.hide()
+                self.showPlaylistButton.setText("Show Playlist")
 
     def createTable(self):
         self.table.setRowCount(len(self.fl))
@@ -343,17 +345,14 @@ class VideoWindow(QMainWindow):
         self.lastPlaylistIndex = self.lastPlaylistIndex + 1
 
     def clickedItem(self):
-        for currentQTableWidgetItem in self.table.selectedItems():
-            self.row = currentQTableWidgetItem.row() + 1
 
-        row = self.row - 1
-        url = QUrl.fromLocalFile(f"{self.drt}/{self.fl[row]}")
+        row = self.table.selectedItems()[0].row()
+        url = QUrl.fromLocalFile(self.loadedSongsPaths[row])
         self.loadMedia(url)
 
     # Deprecated To be done after integration of moviepy
     def saveFile(self):
-        filePath, _ = QFileDialog.getSaveFileName(self, "Save Media", "",
-                                                  "MP3(*.mp3);;MP4(*.mp4 );;All Files(*.*) ")
+        filePath, _ = QFileDialog.getSaveFileName(self, "Save Media", "" , "MP3(*.mp3);;MP4(*.mp4 );;All Files(*.*) ")
         if filePath == "":
             return
 
