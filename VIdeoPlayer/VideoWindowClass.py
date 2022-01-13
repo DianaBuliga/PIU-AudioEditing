@@ -158,12 +158,18 @@ class VideoWindow(QMainWindow):
         self.exitButton = QPushButton()
         self.exitButton.setText("Exit")
         self.exitButton.clicked.connect(self.exitCall)
+        self.sliderTextMin = QLabel()
+        self.sliderTextMin.setText("0:00")
+        self.sliderTextMax = QLabel()
+        self.sliderTextMax.setText("0:00")
 
         # Create position slider layout
         sliderLayout = QHBoxLayout()
         sliderLayout.setContentsMargins(0, 0, 0, 0)
         sliderLayout.addWidget(self.playButton)
+        sliderLayout.addWidget(self.sliderTextMin)
         sliderLayout.addWidget(self.playheadSlider)
+        sliderLayout.addWidget(self.sliderTextMax)
 
         # Create control layout
         controlLayout = QHBoxLayout()
@@ -240,10 +246,23 @@ class VideoWindow(QMainWindow):
     # Changes the position of the slider when it is dragged
     def positionChanged(self, position):
         self.playheadSlider.setValue(position)
+        self.timeDisplayMin(position)
 
-    # Sets the range for the slider between 0 and the duration of the media file
+        # Sets the range for the slider between 0 and the duration of the media file
+
     def durationChanged(self, duration):
         self.playheadSlider.setRange(0, duration)
+        self.timeDisplayMax(duration)
+
+    def timeDisplayMax(self, duration):
+        minutes = int(duration / 60000)
+        seconds = int((duration - minutes * 60000) / 1000)
+        self.sliderTextMax.setText('{}:{}'.format(minutes, seconds))
+
+    def timeDisplayMin(self, position):
+        minutes = int(position / 60000)
+        seconds = int((position - minutes * 60000) / 1000)
+        self.sliderTextMin.setText('{}:{}'.format(minutes, seconds))
 
     # Changes the timestamp of the media when moving the playheadSlider
     def setPosition(self, position):
