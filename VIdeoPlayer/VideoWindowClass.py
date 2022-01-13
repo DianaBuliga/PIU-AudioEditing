@@ -51,14 +51,11 @@ class VideoWindow(QMainWindow):
         self.drt = None
         self.fl = None
         self.songPlaying = ""
-
         self.currentRowNr = 0
         self.lastPlaylistIndex = 0
-        self.index = 0
-        self.savedIndex = 0
+
         self.filenames = []
 
-        self.LoadedMediaActions = []
         self.errorLabel = QLabel()
         self.errorLabel.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
 
@@ -267,35 +264,33 @@ class VideoWindow(QMainWindow):
 
     # Loads a selected media file into the videoplayer
     def loadMedia(self, musicPath):
-        if self.filenames:
-            self.mediaPlayer.setMedia(QMediaContent(musicPath))
-            self.playButton.setEnabled(True)
-            self.comboSpeed.setEnabled(True)
-            self.cutButton.setEnabled(True)
-            self.saveButton.setEnabled(True)
-            self.fullScreenButton.setEnabled(True)
+        self.mediaPlayer.setMedia(QMediaContent(musicPath))
+        self.mediaPlayer.play()
+        self.playButton.setEnabled(True)
+        self.comboSpeed.setEnabled(True)
+        self.cutButton.setEnabled(True)
+        self.saveButton.setEnabled(True)
+        self.fullScreenButton.setEnabled(True)
 
     # Lets you select one media file and add it to the "filenames" submenu
     def openFile(self):
         fileName, _ = QFileDialog.getOpenFileName(self, "Add File", QDir.homePath())
-        index = self.index
-        self.savedIndex = index
         if fileName != '':
-            self.filenames.append(fileName)
-            musicPath=QUrl.fromLocalFile(fileName)
-            # Create new action
-            LoadedMediaAction = QAction(QIcon('../resources/icons/media.png'), fileName.split('/')[-1], self)
-            LoadedMediaAction.setStatusTip(fileName)
-            LoadedMediaAction.triggered.connect(lambda: self.loadMedia(musicPath))
-            self.loadedMediaMenu.addAction(LoadedMediaAction)
-            self.index = self.index + 1
+            self.createLoadedMediaAction(fileName)
+
+    # Create new Load Media Action
+    def createLoadedMediaAction(self, fileName):
+        LoadedMediaAction = QAction(QIcon('../resources/icons/media.png'), fileName.split('/')[-1], self)
+        LoadedMediaAction.setStatusTip(fileName.split('/')[-1])
+        LoadedMediaAction.triggered.connect(lambda: self.loadMedia(QUrl.fromLocalFile(fileName)))
+        self.loadedMediaMenu.addAction(LoadedMediaAction)
 
     # Lets you select multiple media files and add it to the "filenames" submenu
     def openMediaFolder(self):
         folderChosen = QFileDialog.getExistingDirectory(self, 'Open Music Folder', '~')
 
         self.drt = folderChosen
-        cam = [path.join(self.drt, nome) for nome in ld(self.drt) if path.isfile(path.join(self.drt, nome))]
+        cam = [path.join(self.drt, name) for name in ld(self.drt) if path.isfile(path.join(self.drt, name))]
         self.fl = [x[len(self.drt) + 1:] for x in cam]
         self.table.setRowCount(len(self.fl) + self.currentRowNr)
         self.table.setVerticalHeaderLabels(("",) * (len(self.fl) + self.currentRowNr))
@@ -318,9 +313,9 @@ class VideoWindow(QMainWindow):
                                                QTableWidgetItem(str(x + 1 + self.lastPlaylistIndex)))
                             self.table.setItem(x + self.lastPlaylistIndex, 1, QTableWidgetItem(self.fl[x]))
                             self.table.setItem(x + self.lastPlaylistIndex, 2, QTableWidgetItem("Placeholder"))
-                            self.table.setColumnWidth(0, self.frameGeometry().width()/10)
-                            self.table.setColumnWidth(1, 3*self.frameGeometry().width()/4)
-                            self.table.setColumnWidth(2, 1/8*self.frameGeometry().width())
+                            self.table.setColumnWidth(0, self.frameGeometry().width() / 10)
+                            self.table.setColumnWidth(1, 3 * self.frameGeometry().width() / 4)
+                            self.table.setColumnWidth(2, 1 / 8 * self.frameGeometry().width())
                         self.playlist.addMedia(QMediaContent(QUrl.fromLocalFile(iterator.filePath())))
                     else:
                         break
@@ -329,31 +324,14 @@ class VideoWindow(QMainWindow):
             self.table.hide()
             self.lastPlaylistIndex += len(self.fl)
 
-
-    def addFiles(self):
-        if self.playlist.mediaCount() > 0:
-            self.openMediaFolder()
-        else:
-            self.openMediaFolder()
-            for x in range(len(self.fl)):
-                self.player.setPlaylist(self.playlist)
-                self.player.playlist().setCurrentIndex(-x)
-                self.player.play()
-          #  self.player.durationChanged.connect(self.duration_Changed)
-            self.player.stop()
-         #   print(self.dur)
-
     def clickedItem(self):
         self.play = True
         for currentQTableWidgetItem in self.table.selectedItems():
             self.row = currentQTableWidgetItem.row() + 1
-            self.v = currentQTableWidgetItem.text()
 
-        row = self.row - 1
+        row = self.row-1
         url = QUrl.fromLocalFile(f"{self.drt}/{self.fl[row]}")
-        content = QMediaContent(url)
-        self.mediaPlayer.setMedia(content)
-        self.mediaPlayer.play()
+        self.loadMedia(url)
 
     # Deprecated To be done after integration of moviepy
     def saveFile(self):
@@ -361,7 +339,6 @@ class VideoWindow(QMainWindow):
                                                   "MP3(*.mp3);;MP4(*.mp4 );;All Files(*.*) ")
         if filePath == "":
             return
-        self.filenames[self.savedIndex].save(filePath)
 
     # Exit the application
     def exitCall(self):
