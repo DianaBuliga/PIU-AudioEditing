@@ -272,7 +272,9 @@ class VideoWindow(QMainWindow):
 
     # Lets you select one media file and add it to the "filenames" submenu
     def openFile(self):
-        fileName, _ = QFileDialog.getOpenFileName(self, "Add File", QDir.homePath(),"MP3(*.mp3);;MP4(*.mp4 );; OGG(*.ogg);; WAV(*.wav);; M4A(*.m4a);;All Files(*.*) ")
+        fileName, _ = QFileDialog.getOpenFileName(self, "Add File", QDir.homePath(), "MP3(*.mp3);;MP4(*.mp4 );; OGG("
+                                                                                     "*.ogg);; WAV(*.wav);; M4A("
+                                                                                     "*.m4a);;All Files(*.*) ")
         if fileName != '':
             self.fl.append(fileName.split('/')[-1])
             self.loadedSongsPaths.append(fileName)
@@ -352,7 +354,7 @@ class VideoWindow(QMainWindow):
 
     # Deprecated To be done after integration of moviepy
     def saveFile(self):
-        filePath, _ = QFileDialog.getSaveFileName(self, "Save Media", "" , "MP3(*.mp3);;MP4(*.mp4 );;All Files(*.*) ")
+        filePath, _ = QFileDialog.getSaveFileName(self, "Save Media", "", "MP3(*.mp3);;MP4(*.mp4 );;All Files(*.*) ")
         if filePath == "":
             return
 
