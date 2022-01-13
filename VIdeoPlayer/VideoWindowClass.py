@@ -50,6 +50,8 @@ class VideoWindow(QMainWindow):
         self.play = False
         self.drt = None
         self.fl = None
+        self.songPlaying = ""
+
         self.currentRowNr = 0
         self.lastPlaylistIndex = 0
         self.index = 0
@@ -190,7 +192,7 @@ class VideoWindow(QMainWindow):
         self.playlistLayout = QHBoxLayout()
 
         # Add to the final layout
-        finalLayout = QHBoxLayout()
+        finalLayout = QVBoxLayout()
         finalLayout.addLayout(leftLayout)
         finalLayout.addLayout(self.playlistLayout)
 
@@ -315,9 +317,9 @@ class VideoWindow(QMainWindow):
                                                QTableWidgetItem(str(x + 1 + self.lastPlaylistIndex)))
                             self.table.setItem(x + self.lastPlaylistIndex, 1, QTableWidgetItem(self.fl[x]))
                             self.table.setItem(x + self.lastPlaylistIndex, 2, QTableWidgetItem("Placeholder"))
-                            self.table.setColumnWidth(0, 45)
-                            self.table.setColumnWidth(1, 360)
-                            self.table.setColumnWidth(2, 80)
+                            self.table.setColumnWidth(0, self.frameGeometry().width()/10)
+                            self.table.setColumnWidth(1, 3*self.frameGeometry().width()/4)
+                            self.table.setColumnWidth(2, 1/8*self.frameGeometry().width())
                         self.playlist.addMedia(QMediaContent(QUrl.fromLocalFile(iterator.filePath())))
                     else:
                         break
