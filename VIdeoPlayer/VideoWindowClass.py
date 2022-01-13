@@ -28,6 +28,7 @@ class VideoWindow(QMainWindow):
         super(VideoWindow, self).__init__(parent)
 
         # Set the title of the project
+
         self.setWindowTitle("PyQT Project")
 
         # Get the previous settings
@@ -47,14 +48,10 @@ class VideoWindow(QMainWindow):
         # Variables used for the logic of loading the files (To be reviewed)
 
         self.playlistLoaded = False
-        self.play = False
         self.drt = None
-        self.fl = None
+        self.fl = []
         self.songPlaying = ""
-        self.currentRowNr = 0
         self.lastPlaylistIndex = 0
-
-        self.filenames = []
 
         self.errorLabel = QLabel()
         self.errorLabel.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
@@ -276,7 +273,17 @@ class VideoWindow(QMainWindow):
     def openFile(self):
         fileName, _ = QFileDialog.getOpenFileName(self, "Add File", QDir.homePath())
         if fileName != '':
+            print(fileName)
+            self.fl += str(fileName)
             self.createLoadedMediaAction(fileName)
+            self.createTable()
+            self.createTableRow()
+
+            self.playlistLoaded = True
+            self.showPlaylistButton.setEnabled(True)
+            self.playlistLayout.addWidget(self.table)
+            self.table.hide()
+            self.showPlaylistButton.setText("Show Playlist")
 
     # Create new Load Media Action
     def createLoadedMediaAction(self, fileName):
@@ -290,13 +297,11 @@ class VideoWindow(QMainWindow):
         folderChosen = QFileDialog.getExistingDirectory(self, 'Open Music Folder', '~')
 
         self.drt = folderChosen
-        cam = [path.join(self.drt, name) for name in ld(self.drt) if path.isfile(path.join(self.drt, name))]
-        self.fl = [x[len(self.drt) + 1:] for x in cam]
-        self.table.setRowCount(len(self.fl) + self.currentRowNr)
-        self.table.setVerticalHeaderLabels(("",) * (len(self.fl) + self.currentRowNr))
-        self.currentRowNr += len(self.fl)
-        self.table.setEditTriggers(QTableWidget.NoEditTriggers)
-        self.table.itemDoubleClicked.connect(self.clickedItem)
+        cam = [path.join(self.drt, name) for name in ld(self.drt) if path.isfile(path.join(self.drt, name))]  # Lista de path-uri de melodii
+        self.fl += [x[len(self.drt) + 1:] for x in cam]  # Lista de nume de melodii
+        self.createTable()
+
+        print(self.fl)
 
         if folderChosen is not None:
             self.playlistLoaded = True
@@ -305,31 +310,43 @@ class VideoWindow(QMainWindow):
             iterator.next()
             while iterator.hasNext():
                 if not iterator.fileInfo().isDir() and iterator.filePath() != '.':
-                    fInfo = iterator.fileInfo()
-                    if fInfo.suffix() in ('mp3', 'ogg', 'wav', 'm4a', 'mp4', 'wav'):
-                        for x in range(len(self.fl)):
-                            self.filenames.append(iterator.filePath())
-                            self.table.setItem(x + self.lastPlaylistIndex, 0,
-                                               QTableWidgetItem(str(x + 1 + self.lastPlaylistIndex)))
-                            self.table.setItem(x + self.lastPlaylistIndex, 1, QTableWidgetItem(self.fl[x]))
-                            self.table.setItem(x + self.lastPlaylistIndex, 2, QTableWidgetItem("Placeholder"))
-                            self.table.setColumnWidth(0, self.frameGeometry().width() / 10)
-                            self.table.setColumnWidth(1, 3 * self.frameGeometry().width() / 4)
-                            self.table.setColumnWidth(2, 1 / 8 * self.frameGeometry().width())
-                        self.playlist.addMedia(QMediaContent(QUrl.fromLocalFile(iterator.filePath())))
+                    if iterator.fileInfo().suffix() in ('mp3', 'ogg', 'wav', 'm4a', 'mp4', 'wav'):
+                        self.createLoadedMediaAction(self.fl[self.lastPlaylistIndex])
+                        self.createTableRow()
                     else:
                         break
                 iterator.next()
+
+            #self.createLoadedMediaAction(self.fl[self.lastPlaylistIndex])
+            #self.createTableRow()
+
             self.playlistLayout.addWidget(self.table)
             self.table.hide()
-            self.lastPlaylistIndex += len(self.fl)
+            self.showPlaylistButton.setText("Show Playlist")
+
+    def createTable(self):
+        self.table.setRowCount(len(self.fl))
+        self.table.setVerticalHeaderLabels(("",) * (len(self.fl)))
+
+        self.table.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.table.itemDoubleClicked.connect(self.clickedItem)
+
+    def createTableRow(self):
+        self.table.setItem(self.lastPlaylistIndex, 0, QTableWidgetItem(str(self.lastPlaylistIndex + 1)))
+        self.table.setItem(self.lastPlaylistIndex, 1, QTableWidgetItem(self.fl[self.lastPlaylistIndex]))
+        self.table.setItem(self.lastPlaylistIndex, 2, QTableWidgetItem("Placeholder"))
+
+        self.table.setColumnWidth(0, self.frameGeometry().width() / 10)
+        self.table.setColumnWidth(1, 3 * self.frameGeometry().width() / 4)
+        self.table.setColumnWidth(2, 1 / 8 * self.frameGeometry().width())
+
+        self.lastPlaylistIndex = self.lastPlaylistIndex + 1
 
     def clickedItem(self):
-        self.play = True
         for currentQTableWidgetItem in self.table.selectedItems():
             self.row = currentQTableWidgetItem.row() + 1
 
-        row = self.row-1
+        row = self.row - 1
         url = QUrl.fromLocalFile(f"{self.drt}/{self.fl[row]}")
         self.loadMedia(url)
 
