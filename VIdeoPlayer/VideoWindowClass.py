@@ -1,6 +1,6 @@
 from os import path, listdir as ld
 
-from PyQt5.QtCore import QDir, Qt, QUrl, pyqtSignal, QSettings, QDirIterator, pyqtSlot
+from PyQt5.QtCore import QDir, Qt, QUrl, pyqtSignal, QSettings, QDirIterator
 from PyQt5.QtGui import QIcon
 from PyQt5.QtMultimedia import QMediaContent, QMediaPlayer, QMediaPlaylist
 from PyQt5.QtMultimediaWidgets import QVideoWidget
