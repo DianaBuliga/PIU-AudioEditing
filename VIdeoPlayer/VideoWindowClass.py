@@ -8,13 +8,13 @@ from PyQt5.QtWidgets import (QFileDialog, QHBoxLayout, QLabel,
                              QSizePolicy, QSlider, QStyle, QVBoxLayout, QComboBox, QTableWidget, QTableWidgetItem)
 from PyQt5.QtWidgets import QMainWindow, QWidget, QPushButton, QAction
 
-
-# from moviepy.video.io.VideoFileClip import VideoFileClip
+from moviepy.editor import *
 
 
 class VideoWindow(QMainWindow):
     changeRate = pyqtSignal(float)
     fullScreenChanged = pyqtSignal(bool)
+    VideoFileClip
 
     # Methods for saving the state of the app
     def getSettingsValues(self):
@@ -47,6 +47,7 @@ class VideoWindow(QMainWindow):
 
         # Variables used for the logic of loading the files (To be reviewed)
 
+        self.editedMediaFile = None
         self.loadedSongsPaths = []
         self.playlistLoaded = False
         self.drt = None
@@ -106,8 +107,8 @@ class VideoWindow(QMainWindow):
         videoWidget = QVideoWidget()
 
         # Set the table
-        self.table.setColumnCount(3)
-        self.table.setHorizontalHeaderLabels(("NR", "TITLE", 'TIME'))
+        self.table.setColumnCount(2)
+        self.table.setHorizontalHeaderLabels(("NR", "TITLE"))
 
         # Create Playlist
         self.playlist = QMediaPlaylist()
@@ -147,6 +148,7 @@ class VideoWindow(QMainWindow):
         self.cutButton = QPushButton()
         self.cutButton.setEnabled(False)
         self.cutButton.setText("Cut")
+        self.cutButton.clicked.connect(self.cutSong)
 
         # Create Save button
         self.saveButton = QPushButton()
@@ -158,6 +160,8 @@ class VideoWindow(QMainWindow):
         self.exitButton = QPushButton()
         self.exitButton.setText("Exit")
         self.exitButton.clicked.connect(self.exitCall)
+
+        # Create Slider Timestamp Labels
         self.sliderTextMin = QLabel()
         self.sliderTextMin.setText("0:00")
         self.sliderTextMax = QLabel()
@@ -281,6 +285,7 @@ class VideoWindow(QMainWindow):
 
     # Loads a selected media file into the videoplayer
     def loadMedia(self, musicPath):
+
         self.mediaPlayer.setMedia(QMediaContent(musicPath))
         self.mediaPlayer.play()
         self.playButton.setEnabled(True)
@@ -291,7 +296,9 @@ class VideoWindow(QMainWindow):
 
     # Lets you select one media file and add it to the "filenames" submenu
     def openFile(self):
-        fileName, _ = QFileDialog.getOpenFileName(self, "Add File", QDir.homePath(),"MP3(*.mp3);;MP4(*.mp4 );; OGG(*.ogg);; WAV(*.wav);; M4A(*.m4a);;All Files(*.*) ")
+        fileName, _ = QFileDialog.getOpenFileName(self, "Add File", QDir.homePath(), "MP3(*.mp3);;MP4(*.mp4 );; OGG("
+                                                                                     "*.ogg);; WAV(*.wav);; M4A("
+                                                                                     "*.m4a);;All Files(*.*) ")
         if fileName != '':
             self.fl.append(fileName.split('/')[-1])
             self.loadedSongsPaths.append(fileName)
@@ -355,25 +362,29 @@ class VideoWindow(QMainWindow):
     def createTableRow(self):
         self.table.setItem(self.lastPlaylistIndex, 0, QTableWidgetItem(str(self.lastPlaylistIndex + 1)))
         self.table.setItem(self.lastPlaylistIndex, 1, QTableWidgetItem(self.fl[self.lastPlaylistIndex]))
-        self.table.setItem(self.lastPlaylistIndex, 2, QTableWidgetItem("Placeholder"))
 
-        self.table.setColumnWidth(0, self.frameGeometry().width() / 10)
-        self.table.setColumnWidth(1, 3 * self.frameGeometry().width() / 4)
-        self.table.setColumnWidth(2, 1 / 8 * self.frameGeometry().width())
+        self.table.setColumnWidth(0, 1 * self.frameGeometry().width() / 5)
+        self.table.setColumnWidth(1, 3 * self.frameGeometry().width() / 5)
 
         self.lastPlaylistIndex = self.lastPlaylistIndex + 1
 
     def clickedItem(self):
 
         row = self.table.selectedItems()[0].row()
+        self.songPlaying = self.loadedSongsPaths[row]
         url = QUrl.fromLocalFile(self.loadedSongsPaths[row])
         self.loadMedia(url)
 
+    def cutSong(self):
+        print(self.songPlaying)
+        minim = 10
+        maxim = 15
+        self.editedMediaFile = VideoFileClip(self.songPlaying).subclip(minim, maxim)
+
     # Deprecated To be done after integration of moviepy
     def saveFile(self):
-        filePath, _ = QFileDialog.getSaveFileName(self, "Save Media", "" , "MP3(*.mp3);;MP4(*.mp4 );;All Files(*.*) ")
-        if filePath == "":
-            return
+        filePath, _ = QFileDialog.getSaveFileName(self, "Save Media", "", "MP3(*.mp3);;MP4(*.mp4 );;All Files(*.*) ")
+        self.editedMediaFile.write_videofile(filePath)
 
     # Exit the application
     def exitCall(self):
