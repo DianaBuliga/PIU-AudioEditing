@@ -1,11 +1,12 @@
 from os import path, listdir as ld
 
-from PyQt5.QtCore import QDir, Qt, QUrl, pyqtSignal, QSettings, QDirIterator
+from PyQt5.QtCore import QDir, Qt, QUrl, pyqtSignal, QSettings, QDirIterator, pyqtSlot
 from PyQt5.QtGui import QIcon
 from PyQt5.QtMultimedia import QMediaContent, QMediaPlayer, QMediaPlaylist
 from PyQt5.QtMultimediaWidgets import QVideoWidget
 from PyQt5.QtWidgets import (QFileDialog, QHBoxLayout, QLabel,
-                             QSizePolicy, QSlider, QStyle, QVBoxLayout, QComboBox, QTableWidget, QTableWidgetItem)
+                             QSizePolicy, QSlider, QStyle, QVBoxLayout, QComboBox, QTableWidget, QTableWidgetItem,
+                             QLineEdit, QMessageBox)
 from PyQt5.QtWidgets import QMainWindow, QWidget, QPushButton, QAction
 
 from moviepy.editor import *
@@ -27,6 +28,12 @@ class VideoWindow(QMainWindow):
         super(VideoWindow, self).__init__(parent)
 
         # Set the title of the project
+
+        self.maxSeconds = None
+        self.maxMinutes = None
+
+        self.minSeconds = None
+        self.minMinutes = None
 
         self.setWindowTitle("PyQT Project")
 
@@ -96,7 +103,7 @@ class VideoWindow(QMainWindow):
         fileMenu = menuBar.addMenu('&File')
         self.loadedMediaMenu = menuBar.addMenu('&Loaded')
         fileMenu.setStyleSheet("QMenu::item::selected{"
-                              "background-color: #ffa500;"
+                               "background-color: #ffa500;"
                                "color: black;}")
 
         # Add fileMenu drop-down actions
@@ -158,11 +165,31 @@ class VideoWindow(QMainWindow):
         self.comboSpeed.setCurrentIndex(2)
         self.comboSpeed.setStyleSheet("QPushButton:hover{background-color: #ffa500;}")
 
-        # Create Cut/Done button
+        # Create Crop button
+        self.finishEditButton = QPushButton()
+        self.finishEditButton.setEnabled(False)
+        self.finishEditButton.setHidden(True)
+        self.finishEditButton.setText("CropFile")
+        self.finishEditButton.clicked.connect(self.cutSong)
+        self.finishEditButton.setStyleSheet("QPushButton:hover{background-color: #ffa500;}")
+
+        # Create Left Margin TextArea
+        self.leftMarginText = QLineEdit()
+        self.leftMarginText.setHidden(True)
+        self.leftMarginText.setText("0:00")
+        self.leftMarginText.setStyleSheet("QLabel:hover{background-color: #ffa500;}")
+
+        # Create Right Margin TextArea
+        self.rightMarginText = QLineEdit()
+        self.rightMarginText.setHidden(True)
+        self.rightMarginText.setText("0:00")
+        self.rightMarginText.setStyleSheet("QLabel:hover{background-color: #ffa500;}")
+
+        # Create Crop button
         self.cutButton = QPushButton()
         self.cutButton.setEnabled(False)
-        self.cutButton.setText("Cut")
-        self.cutButton.clicked.connect(self.cutSong)
+        self.cutButton.setText("CropFile")
+        self.cutButton.clicked.connect(self.cropPressed)
         self.cutButton.setStyleSheet("QPushButton:hover{background-color: #ffa500;}")
 
         # Create Save button
@@ -196,20 +223,36 @@ class VideoWindow(QMainWindow):
 
         # Create control layout
         controlLayout = QHBoxLayout()
-        controlLayout.setContentsMargins(110, 20, 0, 0)
+        controlLayout.setContentsMargins(100, 20, 100, 0)
 
         controlLayout.addWidget(self.fullScreenButton)
         controlLayout.addWidget(self.comboSpeed)
-        controlLayout.addWidget(self.cutButton)
-        controlLayout.addWidget(self.saveButton)
         controlLayout.addWidget(self.exitButton)
         controlLayout.addWidget(self.showPlaylistButton)
 
+        # Create edit layout
+        editLayout = QHBoxLayout()
+
+        editLayout.setContentsMargins(100, 10, 100, 0)
+
+        editLayout.addWidget(self.cutButton)
+        editLayout.addWidget(self.saveButton)
+
+        # Create Invisible Overlaping layout
+        hiddenEditLayout = QVBoxLayout()
+
+        hiddenEditLayout.setContentsMargins(100, 10, 100, 0)
+
+        hiddenEditLayout.addWidget(self.leftMarginText)
+        hiddenEditLayout.addWidget(self.rightMarginText)
+        hiddenEditLayout.addWidget(self.finishEditButton)
         # Add to the main layout
         leftLayout = QVBoxLayout()
         leftLayout.addWidget(videoWidget)
         leftLayout.addLayout(sliderLayout)
         leftLayout.addLayout(controlLayout)
+        leftLayout.addLayout(editLayout)
+        leftLayout.addLayout(hiddenEditLayout)
         leftLayout.addWidget(self.errorLabel)
 
         # Create playlist layout
@@ -278,14 +321,14 @@ class VideoWindow(QMainWindow):
         self.timeDisplayMax(duration)
 
     def timeDisplayMax(self, duration):
-        minutes = int(duration / 60000)
-        seconds = int((duration - minutes * 60000) / 1000)
-        self.sliderTextMax.setText('{}:{}'.format(minutes, seconds))
+        self.maxMinutes = int(duration / 60000)
+        self.maxSeconds = int((duration - self.maxMinutes * 60000) / 1000)
+        self.sliderTextMax.setText('{}:{}'.format(self.maxMinutes, self.maxSeconds))
 
     def timeDisplayMin(self, position):
-        minutes = int(position / 60000)
-        seconds = int((position - minutes * 60000) / 1000)
-        self.sliderTextMin.setText('{}:{}'.format(minutes, seconds))
+        self.minMinutes = int(position / 60000)
+        self.minSeconds = int((position - self.minMinutes * 60000) / 1000)
+        self.sliderTextMin.setText('{}:{}'.format(self.minMinutes, self.minSeconds))
 
     # Changes the timestamp of the media when moving the playheadSlider
     def setPosition(self, position):
@@ -305,6 +348,7 @@ class VideoWindow(QMainWindow):
     # Loads a selected media file into the videoplayer
     def loadMedia(self, musicPath):
 
+        self.statusBar().showMessage("Now Playing : " + self.songPlaying.split('/')[-1])
         self.mediaPlayer.setMedia(QMediaContent(musicPath))
         self.mediaPlayer.play()
         self.playButton.setEnabled(True)
@@ -397,9 +441,42 @@ class VideoWindow(QMainWindow):
 
     def cutSong(self):
         print(self.songPlaying)
-        minim = 10
-        maxim = 15
-        self.editedMediaFile = VideoFileClip(self.songPlaying).subclip(minim, maxim)
+        minimSec = 10
+        maximSec = 15
+
+        if (
+                minimSec < 0
+                or maximSec < 0
+                or maximSec >= self.maxSeconds + 60 * self.maxMinutes
+                or minimSec >= self.maxSeconds + 60 * self.maxSeconds
+                or minimSec >= maximSec
+        ):
+
+            QMessageBox.question(self, 'Failed!', "Invalid timestamps! ", QMessageBox.No,
+                                 QMessageBox.No)
+        else:
+            self.editedMediaFile = VideoFileClip(self.songPlaying).subclip(minimSec, maximSec)
+            QMessageBox.question(self, 'Successful!', "Your file has been successfuly croped, now save it!: ",
+                                 QMessageBox.Ok,
+                                 QMessageBox.Ok)
+            self.rightMarginText.setText("0:00")
+            self.rightMarginText.setHidden(True)
+
+            self.leftMarginText.setText("0:00")
+            self.leftMarginText.setHidden(True)
+
+            self.finishEditButton.setEnabled(False)
+            self.finishEditButton.setHidden(True)
+
+    def cropPressed(self):
+        self.rightMarginText.setText('{}:{}'.format(self.maxMinutes, self.maxSeconds))
+        self.rightMarginText.setHidden(False)
+
+        self.leftMarginText.setText('{}:{}'.format(self.minMinutes, self.minSeconds))
+        self.leftMarginText.setHidden(False)
+
+        self.finishEditButton.setEnabled(True)
+        self.finishEditButton.setHidden(False)
 
     # Deprecated To be done after integration of moviepy
     def saveFile(self):
