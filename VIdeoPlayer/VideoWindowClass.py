@@ -445,14 +445,23 @@ class VideoWindow(QMainWindow):
         minText = self.leftMarginText.text()
         maxText = self.rightMarginText.text()
 
+        print("Recieved minText:" + minText)
+        print("Recieved maxText:" + maxText)
+
         minTextMinute = minText.split(':')[0]
         minTextSecond = minText.split(':')[-1]
 
-        maxTextMinute = minText.split(':')[0]
+        print("Recieved minTextMinute:" + minTextMinute)
+        print("Recieved minTextSecond:" + minTextSecond)
+
+        maxTextMinute = maxText.split(':')[0]
         maxTextSecond = maxText.split(':')[-1]
 
-        minimSec = int(minTextSecond) + int(minTextMinute * 60)
-        maximSec = int(maxTextSecond) + int(maxTextMinute * 60)
+        print("Recieved maxTextMinute:" + maxTextMinute)
+        print("Recieved maxTextSecond:" + maxTextSecond)
+
+        minimSec = int(int(minTextSecond) + int(int(minTextMinute) * 60))
+        maximSec = int(int(maxTextSecond) + int(int(maxTextMinute) * 60))
 
         print(minimSec)
         print(maximSec)
