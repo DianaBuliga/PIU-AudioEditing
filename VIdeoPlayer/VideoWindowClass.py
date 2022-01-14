@@ -14,7 +14,6 @@ from moviepy.editor import *
 class VideoWindow(QMainWindow):
     changeRate = pyqtSignal(float)
     fullScreenChanged = pyqtSignal(bool)
-    VideoFileClip
 
     # Methods for saving the state of the app
     def getSettingsValues(self):
@@ -33,6 +32,10 @@ class VideoWindow(QMainWindow):
 
         # Get the previous settings
         self.setting_window = None
+
+        # CSS for window
+        self.setStyleSheet("background-color: #2c3338;"
+                           "color: white;")
 
         # Get the size of the last instance the layout was in
         self.getSettingsValues()
@@ -86,10 +89,15 @@ class VideoWindow(QMainWindow):
 
         # Create menu bar and add action
         menuBar = self.menuBar()
+        menuBar.setStyleSheet("QMenuBar::item::selected{"
+                              "background-color: #ffa500;}")
 
         # Add main menu drop-down buttons
         fileMenu = menuBar.addMenu('&File')
         self.loadedMediaMenu = menuBar.addMenu('&Loaded')
+        fileMenu.setStyleSheet("QMenu::item::selected{"
+                              "background-color: #ffa500;"
+                               "color: black;}")
 
         # Add fileMenu drop-down actions
         fileMenu.addAction(loadFolderAction)
@@ -100,6 +108,9 @@ class VideoWindow(QMainWindow):
         # CREATING WIDGETS
 
         self.table = QTableWidget()
+        self.table.setStyleSheet("background-color: #2c3338; color: white;")
+        self.table.setStyleSheet("QHeaderView::section{"
+                                 "background-color: #2c3338; color: white;}")
 
         self.playlist = QMediaPlaylist()
         # Create the MediaPlayerClass
@@ -128,6 +139,8 @@ class VideoWindow(QMainWindow):
         self.showPlaylistButton = QPushButton("Show Playlist")
         self.showPlaylistButton.setEnabled(False)
         self.showPlaylistButton.clicked.connect(self.showPlaylist)
+        self.showPlaylistButton.setStyleSheet("QPushButton:hover{"
+                                              "background-color: #ffa500;}")
 
         # Create FullScreenButton
         self.fullScreenButton = QPushButton("FullScreen")
@@ -143,29 +156,35 @@ class VideoWindow(QMainWindow):
         self.comboSpeed.addItem("1.25x", 1.25)
         self.comboSpeed.addItem("1.5x", 1.5)
         self.comboSpeed.setCurrentIndex(2)
+        self.comboSpeed.setStyleSheet("QPushButton:hover{background-color: #ffa500;}")
 
         # Create Cut/Done button
         self.cutButton = QPushButton()
         self.cutButton.setEnabled(False)
         self.cutButton.setText("Cut")
         self.cutButton.clicked.connect(self.cutSong)
+        self.cutButton.setStyleSheet("QPushButton:hover{background-color: #ffa500;}")
 
         # Create Save button
         self.saveButton = QPushButton()
         self.saveButton.setEnabled(False)
         self.saveButton.setText("Save")
         self.saveButton.clicked.connect(self.saveFile)
+        self.saveButton.setStyleSheet("QPushButton:hover{background-color: #ffa500;}")
 
         # Create Exit button
         self.exitButton = QPushButton()
         self.exitButton.setText("Exit")
         self.exitButton.clicked.connect(self.exitCall)
+        self.exitButton.setStyleSheet("QPushButton:hover{background-color: #ffa500;}")
 
         # Create Slider Timestamp Labels
         self.sliderTextMin = QLabel()
         self.sliderTextMin.setText("0:00")
+        self.sliderTextMin.setStyleSheet("color: #ffa500;")
         self.sliderTextMax = QLabel()
         self.sliderTextMax.setText("0:00")
+        self.sliderTextMax.setStyleSheet("color: #ffa500;")
 
         # Create position slider layout
         sliderLayout = QHBoxLayout()
@@ -353,6 +372,7 @@ class VideoWindow(QMainWindow):
                 self.showPlaylistButton.setText("Show Playlist")
 
     def createTable(self):
+
         self.table.setRowCount(len(self.fl))
         self.table.setVerticalHeaderLabels(("",) * (len(self.fl)))
 
