@@ -348,8 +348,11 @@ class VideoWindow(QMainWindow):
     # Loads a selected media file into the videoplayer
     def loadMedia(self, musicPath):
 
+        url = QUrl.fromLocalFile(musicPath)
+        self.songPlaying = musicPath
+
         self.statusBar().showMessage("Now Playing : " + self.songPlaying.split('/')[-1])
-        self.mediaPlayer.setMedia(QMediaContent(musicPath))
+        self.mediaPlayer.setMedia(QMediaContent(url))
         self.mediaPlayer.play()
         self.playButton.setEnabled(True)
         self.comboSpeed.setEnabled(True)
@@ -379,7 +382,7 @@ class VideoWindow(QMainWindow):
     def createLoadedMediaAction(self, fileName):
         LoadedMediaAction = QAction(QIcon('../resources/icons/media.png'), fileName.split('/')[-1], self)
         LoadedMediaAction.setStatusTip(fileName.split('/')[-1])
-        LoadedMediaAction.triggered.connect(lambda: self.loadMedia(QUrl.fromLocalFile(fileName)))
+        LoadedMediaAction.triggered.connect(lambda: self.loadMedia(fileName))
         self.loadedMediaMenu.addAction(LoadedMediaAction)
 
     # Lets you select multiple media files and add it to the "filenames" submenu
@@ -402,7 +405,7 @@ class VideoWindow(QMainWindow):
                 while iterator.hasNext():
                     if not iterator.fileInfo().isDir() and iterator.filePath() != '.':
                         if iterator.fileInfo().suffix() in ('mp3', 'ogg', 'wav', 'm4a', 'mp4', 'wav'):
-                            self.createLoadedMediaAction(self.fl[self.lastPlaylistIndex])
+                            self.createLoadedMediaAction(cam[self.lastPlaylistIndex])
                             self.createTableRow()
                         else:
                             break
@@ -435,9 +438,7 @@ class VideoWindow(QMainWindow):
     def clickedItem(self):
 
         row = self.table.selectedItems()[0].row()
-        self.songPlaying = self.loadedSongsPaths[row]
-        url = QUrl.fromLocalFile(self.loadedSongsPaths[row])
-        self.loadMedia(url)
+        self.loadMedia(self.loadedSongsPaths[row])
 
     def cutSong(self):
         print(self.songPlaying)
