@@ -441,15 +441,27 @@ class VideoWindow(QMainWindow):
 
     def cutSong(self):
         print(self.songPlaying)
-        minimSec = 10
-        maximSec = 15
 
+        minText = self.leftMarginText.text()
+        maxText = self.rightMarginText.text()
+
+        minTextMinute = minText.split(':')[0]
+        minTextSecond = minText.split(':')[-1]
+
+        maxTextMinute = minText.split(':')[0]
+        maxTextSecond = maxText.split(':')[-1]
+
+        minimSec = int(minTextSecond) + int(minTextMinute * 60)
+        maximSec = int(maxTextSecond) + int(maxTextMinute * 60)
+
+        print(minimSec)
+        print(maximSec)
         if (
                 minimSec < 0
                 or maximSec < 0
-                or maximSec >= self.maxSeconds + 60 * self.maxMinutes
-                or minimSec >= self.maxSeconds + 60 * self.maxSeconds
-                or minimSec >= maximSec
+                or maximSec > self.maxSeconds + 60 * self.maxMinutes
+                or minimSec > self.maxSeconds + 60 * self.maxSeconds
+                or minimSec > maximSec
         ):
 
             QMessageBox.question(self, 'Failed!', "Invalid timestamps! ", QMessageBox.No,
@@ -459,10 +471,10 @@ class VideoWindow(QMainWindow):
             QMessageBox.question(self, 'Successful!', "Your file has been successfuly croped, now save it!: ",
                                  QMessageBox.Ok,
                                  QMessageBox.Ok)
-            self.rightMarginText.setText("0:00")
+            self.rightMarginText.setText("0:0")
             self.rightMarginText.setHidden(True)
 
-            self.leftMarginText.setText("0:00")
+            self.leftMarginText.setText("0:0")
             self.leftMarginText.setHidden(True)
 
             self.finishEditButton.setEnabled(False)
