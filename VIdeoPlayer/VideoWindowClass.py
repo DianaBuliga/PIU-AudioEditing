@@ -502,8 +502,12 @@ class VideoWindow(QMainWindow):
 
     # Deprecated To be done after integration of moviepy
     def saveFile(self):
-        filePath, _ = QFileDialog.getSaveFileName(self, "Save Media", "", "MP3(*.mp3);;MP4(*.mp4 );;All Files(*.*) ")
-        self.editedMediaFile.write_videofile(filePath)
+        if self.editedMediaFile is not None:
+            filePath, _ = QFileDialog.getSaveFileName(self, "Save Media", "", "MP3(*.mp3);;MP4(*.mp4 );;All Files(*.*) ")
+            self.editedMediaFile.write_videofile(filePath)
+        else:
+            QMessageBox.question(self, 'Nothing to save!', "You haven't made any edits yet! ", QMessageBox.No,
+                                 QMessageBox.No)
 
     # Exit the application
     def exitCall(self):
